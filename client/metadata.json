@@ -1,0 +1,6 @@
+{
+  "name": "Pickup Counter",
+  "description": "A modern self-service snack ordering counter frontend with real-time inventory tracking, shopping cart, and simulated UPI payment countdown and polling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
