@@ -5,6 +5,7 @@ import { pool } from './db/pool.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFound } from './middleware/not-found.js';
 import { orderRoutes } from './routes/order.routes.js';
+import { devPaymentRoutes } from './routes/dev-payment.routes.js';
 import { paymentRoutes } from './routes/payment.routes.js';
 import { productRoutes } from './routes/product.routes.js';
 import { isValidSignature } from './utils/webhook-signature.js';
@@ -15,8 +16,7 @@ export const app = express();
 function isLocalDevelopmentOrigin(origin: string): boolean {
   try {
     const parsed = new URL(origin);
-    return env.nodeEnv !== 'production'
-      && ['http:', 'https:'].includes(parsed.protocol)
+    return ['http:', 'https:'].includes(parsed.protocol)
       && ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname)
       && parsed.origin === origin;
   } catch {
@@ -27,10 +27,11 @@ function isLocalDevelopmentOrigin(origin: string): boolean {
 app.disable('x-powered-by');
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || env.corsOrigins.includes('*') || env.corsOrigins.includes(origin) || isLocalDevelopmentOrigin(origin)) {
+    if (env.nodeEnv !== 'production' || !origin || env.corsOrigins.includes('*') || env.corsOrigins.includes(origin) || isLocalDevelopmentOrigin(origin)) {
       callback(null, true);
       return;
     }
+    console.warn(`Rejected CORS origin: ${origin}`);
     callback(new HttpError(403, 'CORS_ORIGIN_DENIED', 'Origin is not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -63,5 +64,6 @@ app.get('/health', async (_request, response, next) => {
 app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
 app.use('/payments/webhook', paymentRoutes);
+if (env.nodeEnv !== 'production') app.use('/webhooks', devPaymentRoutes);
 app.use(notFound);
 app.use(errorHandler);
